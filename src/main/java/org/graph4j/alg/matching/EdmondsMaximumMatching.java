@@ -95,8 +95,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         }
 
         // else x must have an edge label, so we retrieve the vertices forming the said edge and
-        int edgeLabel = adj[x][y];
-        int v = edge[edgeLabel - 1], w = edge[edgeLabel];
+        int v = edge[label[x] - 1], w = edge[label[x]];
         augment(v, w);
         augment(w, v);
     }
