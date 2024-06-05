@@ -23,8 +23,14 @@ import org.graph4j.util.Matching;
 import java.util.Arrays;
 
 /**
- * TODO
- * @author Cristian Frăsinaru
+ * An implementation of Edmonds' maximum matching Blossom algorithm, as described by Gabow in his 1976 paper
+ * `An implementation of Edmonds' algorithm for maximum matching`. The original implementation of Edmonds had a
+ * computation time of O(n^4), while this algorithm has a computation time proportional to O(n^3). Its key being that,
+ * as opposed to Edmonds implementation, it doesn't actually shrink blossoms, it instead uses some clever data structures
+ * which are used for finding alternating paths.
+ *
+ * @author Alexandru Mitreanu
+ * @author Alina Căprioară
  */
 public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements MatchingAlgorithm {
     // we store n and m for faster memory access (faster than a method call)
@@ -35,16 +41,16 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
     private final int[][] adj;
     private final int[] end; // given the number of an edge (i, j), n(ij), end[2 * n(ij) - 1] = i and end[2 * n(ij)] = j
     // label[i] can be 4 things:
-    // - -1 - non-outer
-    // - 0 - start label
-    // - [1, n] - vertex label
+    // - -1                 - non-outer
+    // - 0                  - start label
+    // - [1, n]             - vertex label
     // - [n + 1, n + 2 * m] - edge label
     private final int[] label;
     // first[i] is the first non-outer vertex on the path from i to the start vertex s
     private final int[] first;
     // ij in matching <=> mate[i] = j and mate[j] = i
     private final int[] mate;
-
+    
     // queue used for the search, we use our own implementation because this queue also stores the outer nodes in the
     // current search, which we use in the label method and when resetting the search
     int[] q;
@@ -77,7 +83,6 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
     }
 
     // recursively augment the path P(x)
-    // TODO: implement recursion using a stack for memory efficiency
     private void augment(int x, int y) {
         // match x to y (y is assumed to have been matched to x by the caller of this method)
         int t = mate[x];
@@ -100,8 +105,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         augment(w, v);
     }
 
-    // recursively label non-outer vertices in paths P(x) and P(y)
-    // TODO: implement recursion using a stack for memory efficiency
+    // label non-outer vertices in paths P(x) and P(y)
     private void label(int x, int y) {
         int edgeLabel = adj[x][y];
         int r = first[x];
