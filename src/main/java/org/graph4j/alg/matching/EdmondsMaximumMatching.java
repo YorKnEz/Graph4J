@@ -155,7 +155,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         // update the first of all outer nodes to join by checking which nodes have their first labeled with -edgeLabel
         // TODO: could probably be done better than O(n)
         for (int i = 0; i <= n; i++) {
-            if (label[first[i]] == -edgeLabel) {
+            if (label[i] >= 0 && label[first[i]] >= 0) {
                 first[i] = join;
             }
         }
