@@ -20,9 +20,7 @@ import org.graph4j.Graph;
 import org.graph4j.alg.SimpleGraphAlgorithm;
 import org.graph4j.util.Matching;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 
 /**
  * TODO
@@ -47,9 +45,10 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
     // ij in matching <=> mate[i] = j and mate[j] = i
     private final int[] mate;
 
-    // queue used for the search
-    // TODO: maybe implement a queue using an `int[]` instead of this for memory efficiency
-    private final Deque<Integer> q;
+    // queue used for the search, we use our own implementation because this queue also stores the outer nodes in the
+    // current search, which we use in the label method and when resetting the search
+    int[] q;
+    int qFirst, qLast;
 
     public EdmondsMaximumMatching(Graph graph) {
         super(graph);
@@ -62,7 +61,8 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         label = new int[n + 1];
         first = new int[n + 1];
         mate = new int[n + 1];
-        q = new ArrayDeque<>();
+        q = new int[n];
+        qFirst = qLast = 0;
 
         // find the min vertex label in order to normalize all labels in interval [1, n]
         minV = Arrays.stream(graph.vertices()).min().orElse(0) - 1;
@@ -140,7 +140,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         while (r != join) {
             label[r] = edgeLabel;
             first[r] = join;
-            q.addLast(r);
+            q[qLast++] = r;
             r = first[label[mate[r]]];
         }
 
@@ -148,15 +148,15 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         while (r != join) {
             label[r] = edgeLabel;
             first[r] = join;
-            q.addLast(r);
+            q[qLast++] = r;
             r = first[label[mate[r]]];
         }
 
-        // update the first of all outer nodes to join by checking which nodes have their first labeled with -edgeLabel
-        // TODO: could probably be done better than O(n)
-        for (int i = 0; i <= n; i++) {
-            if (label[i] >= 0 && label[first[i]] >= 0) {
-                first[i] = join;
+        // update all outer vertices i that have their first[i] marked by the method to have their first[i] = join
+        for (int i = 0, qi; i < qLast; i++) {
+            qi = q[i];
+            if (label[qi] >= 0 && label[first[qi]] >= 0) {
+                first[qi] = join;
             }
         }
     }
@@ -173,7 +173,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
             label[i] = -1;
             mate[i] = 0;
         }
-        q.clear();
+        qFirst = qLast = 0;
 
         while (u <= n) {
             // skip matched vertices
@@ -184,13 +184,13 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
 
             // start the search from unmatched vertex u
             label[u] = first[u] = 0;
-            q.addLast(u);
+            q[qLast++] = u;
 
             // at this stage, we begin the search in a BFS manner, storing a queue of outer edges (label[i] >= 0)
             // which we use to examine edges xy in which x is taken from the queue and is an outer edge
             search:
-            while (!q.isEmpty()) {
-                x = q.removeFirst(); // take first outer edge from the queue
+            while (qFirst < qLast) {
+                x = q[qFirst++];
 
                 // walk through its edge list
                 for (var e : graph.edgesOf(x + minV)) {
@@ -215,18 +215,19 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
                     if (label[v] < 0) {
                         label[v] = x;
                         first[v] = y;
-                        q.addLast(v);
+                        q[qLast++] = v;
                     }
                 }
             }
 
             // prepare the data structures for the next search
-            // TODO: probably can be done better?
-            for (int i = 0; i <= n; i++) {
-                label[i] = -1;
-                first[i] = 0;
+            label[0] = -1;
+            for (int i = 0, qi; i < qLast; i++) {
+                qi = q[i];
+                label[qi] = label[mate[qi]] = -1;
+                first[qi] = first[mate[qi]] = 0;
             }
-            q.clear();
+            qFirst = qLast = 0;
 
             u++;
         }
