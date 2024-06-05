@@ -140,14 +140,16 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         r = first[x];
         while (r != join) {
             label[r] = edgeLabel;
-            q.push(r);
+            first[r] = join;
+            q.addLast(r);
             r = first[label[mate[r]]];
         }
 
         r = first[y];
         while (r != join) {
             label[r] = edgeLabel;
-            q.push(r);
+            first[r] = join;
+            q.addLast(r);
             r = first[label[mate[r]]];
         }
 
@@ -189,7 +191,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
             // which we use to examine edges xy in which x is taken from the queue and is an outer edge
             search:
             while (!q.isEmpty()) {
-                x = q.pop(); // take first outer edge from the queue
+                x = q.removeFirst(); // take first outer edge from the queue
 
                 // walk through its edge list
                 for (var e : graph.edgesOf(x + minV)) {
@@ -214,7 +216,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
                     if (label[v] < 0) {
                         label[v] = x;
                         first[v] = y;
-                        q.push(v);
+                        q.addLast(v);
                     }
                 }
             }
