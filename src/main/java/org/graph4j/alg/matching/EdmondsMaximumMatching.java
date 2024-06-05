@@ -51,8 +51,29 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm {
     // queue used for the search
     // TODO: maybe implement a queue using an `int[]` instead of this for memory efficiency
     private Deque<Integer> q;
+
     public EdmondsMaximumMatching(Graph graph) {
         super(graph);
+
+        n = graph.numVertices();
+        m = (int) graph.numEdges();
+        adj = new int[n + 1][n + 1];
+        edge = new int[(int) (n + 1 + 2 * m)];
+        label = new int[n + 1];
+        first = new int[n + 1];
+        mate = new int[n + 1];
+        q = new ArrayDeque<>();
+
+        // find the min vertex label in order to normalize all labels in interval [1, n]
+        minV = Arrays.stream(graph.vertices()).min().orElse(0) - 1;
+
+        int i = 1;
+        for (var e : graph.edges()) {
+            edge[n + 2 * i - 1] = e.source() - minV;
+            edge[n + 2 * i] = e.target() - minV;
+            adj[e.source() - minV][e.target() - minV] = adj[e.target() - minV][e.source() - minV] = n + 2 * i;
+            i++;
+        }
     }
 
 }
