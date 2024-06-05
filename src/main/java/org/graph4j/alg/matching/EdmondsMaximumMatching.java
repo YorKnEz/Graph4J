@@ -165,7 +165,6 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
     public Matching getMatching() {
         int u = 1;
         int x; // current vertex of search
-        int y;
         int v; // temporary variable
 
         // initialize data structures
@@ -193,8 +192,8 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
                 x = q[qFirst++];
 
                 // walk through its edge list
-                for (var e : graph.edgesOf(x + minV)) {
-                    y = e.target() - minV;
+                for (int y : graph.neighbors(x + minV)) {
+                    y -= minV;
 
                     // if we find an edge that is unmatched, it means we can augment the path and stop the current search
                     if (mate[y] == 0 && y != u) {
