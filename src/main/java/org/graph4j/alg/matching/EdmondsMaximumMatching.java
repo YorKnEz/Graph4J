@@ -76,4 +76,29 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm {
         }
     }
 
+    // recursively augment the path P(x)
+    // TODO: implement recursion using a stack for memory efficiency
+    private void augment(int x, int y) {
+        // match x to y (y is assumed to have been matched to x by the caller of this method)
+        int t = mate[x];
+        mate[x] = y;
+
+        if (mate[t] != x) {
+            return;
+        }
+
+        // if x has a vertex label
+        if (1 <= label[x] && label[x] <= n) {
+            mate[t] = label[x]; // match t to label[x]
+            augment(label[x], t); // match label[x] to t and the rest of the path to starting vertex
+            return;
+        }
+
+        // else x must have an edge label, so we retrieve the vertices forming the said edge and
+        int edgeLabel = adj[x][y];
+        int v = edge[edgeLabel - 1], w = edge[edgeLabel];
+        augment(v, w);
+        augment(w, v);
+    }
+
 }
