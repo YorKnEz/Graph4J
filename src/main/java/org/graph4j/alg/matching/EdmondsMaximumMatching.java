@@ -28,7 +28,7 @@ import java.util.Deque;
  * TODO
  * @author Cristian Frăsinaru
  */
-public class EdmondsMaximumMatching extends SimpleGraphAlgorithm {
+public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements MatchingAlgorithm {
     // we store n and m for faster memory access (faster than a method call)
     private final int n; // number of vertices
     private final int m; // number of edges
@@ -160,4 +160,83 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm {
         }
     }
 
+    @Override
+    public Matching getMatching() {
+        int u = 1;
+        int x; // current vertex of search
+        int y;
+        int v; // temporary variable
+        boolean found;
+
+        // initialize data structures
+        for (int i = 0; i <= n; i++) {
+            label[i] = -1;
+            mate[i] = 0;
+        }
+        q.clear();
+
+        while (u <= n) {
+            // skip matched vertices
+            if (mate[u] != 0) {
+                u++;
+                continue;
+            }
+
+            // start the search from unmatched vertex u
+            label[u] = first[u] = 0;
+            q.addLast(u);
+
+            // at this stage, we begin the search in a BFS manner, storing a queue of outer edges (label[i] >= 0)
+            // which we use to examine edges xy in which x is taken from the queue and is an outer edge
+            search:
+            while (!q.isEmpty()) {
+                x = q.pop(); // take first outer edge from the queue
+
+                // walk through its edge list
+                for (var e : graph.edgesOf(x + minV)) {
+                    y = e.target() - minV;
+
+                    // if we find an edge that is unmatched, it means we can augment the path and stop the current search
+                    if (mate[y] == 0 && y != u) {
+                        mate[y] = x;
+                        augment(x, y);
+                        break search;
+                    }
+
+                    // if y is outer it means we found two paths P(x), P(y) that can be joined (thus forming a blossom)
+                    if (label[y] >= 0) {
+                        label(x, y);
+                        continue;
+                    }
+
+                    v = mate[y];
+
+                    // if mate of y is non-outer, it means we can extend the path P(x) with edge (y, mate[y])
+                    if (label[v] < 0) {
+                        label[v] = x;
+                        first[v] = y;
+                        q.push(v);
+                    }
+                }
+            }
+
+            // prepare the data structures for the next search
+            // TODO: probably can be done better?
+            for (int i = 0; i <= n; i++) {
+                label[i] = -1;
+                first[i] = 0;
+            }
+            q.clear();
+
+            u++;
+        }
+
+        // matching is found, build it from mate array
+        Matching m = new Matching(graph);
+        for (int i = 1; i <= n; i++) {
+            m.add(i + minV, mate[i] + minV); // take into account minV to denormalize the vertex indices
+        }
+
+        return m;
+    }
 }
