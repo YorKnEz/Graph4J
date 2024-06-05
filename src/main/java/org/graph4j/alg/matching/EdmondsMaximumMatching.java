@@ -101,4 +101,63 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm {
         augment(w, v);
     }
 
+    // recursively label non-outer vertices in paths P(x) and P(y)
+    // TODO: implement recursion using a stack for memory efficiency
+    private void label(int x, int y) {
+        int edgeLabel = adj[x][y];
+        int r = first[x];
+        int s = first[y];
+        int join = 0; // this will be the index of the first non-outer vertex both on P(x) and P(y) (variable will also be used as an aux for swap)
+
+        // if they have the same non-outer vertex as the first on their paths to the start, there are no new vertices
+        // that we can label
+        if (r == s) {
+            return;
+        }
+
+        // flag r and s
+        label[r] = -edgeLabel;
+        label[s] = -edgeLabel;
+
+        // alternatively flag the non-outer vertices on the paths P(x) and P(y) until we reach the common root which we will store in join
+        while (s != 0) {
+            join = r;
+            r = s;
+            s = join;
+
+            r = first[label[mate[r]]];
+
+            if (label[r] == -edgeLabel) {
+                join = r;
+                break;
+            }
+
+            label[r] = -edgeLabel;
+        }
+
+        // mark all non-outer vertices on P(x) and P(y) (excluding join) with an edge label
+        // use r as the iterator
+        r = first[x];
+        while (r != join) {
+            label[r] = edgeLabel;
+            q.push(r);
+            r = first[label[mate[r]]];
+        }
+
+        r = first[y];
+        while (r != join) {
+            label[r] = edgeLabel;
+            q.push(r);
+            r = first[label[mate[r]]];
+        }
+
+        // update the first of all outer nodes to join by checking which nodes have their first labeled with -edgeLabel
+        // TODO: could probably be done better than O(n)
+        for (int i = 0; i <= n; i++) {
+            if (label[first[i]] == -edgeLabel) {
+                first[i] = join;
+            }
+        }
+    }
+
 }
