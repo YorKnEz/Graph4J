@@ -31,7 +31,6 @@ import java.util.Deque;
 public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements MatchingAlgorithm {
     // we store n and m for faster memory access (faster than a method call)
     private final int n; // number of vertices
-    private final int m; // number of edges
     private final int minV; // minimum index of a vertex in the original graph
     // we use an adjacency matrix instead of an adjacency list for O(1) retrieval of an edge number, given two vertices i, j
     // adj[i][j] = edge number of edge (i,j) or 0 if the edge doesn't exist
@@ -42,21 +41,22 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
     // - 0 - start label
     // - [1, n] - vertex label
     // - [n + 1, n + 2 * m] - edge label
-    private int[] label;
+    private final int[] label;
     // first[i] is the first non-outer vertex on the path from i to the start vertex s
-    private int[] first;
+    private final int[] first;
     // ij in matching <=> mate[i] = j and mate[j] = i
-    private int[] mate;
+    private final int[] mate;
 
     // queue used for the search
     // TODO: maybe implement a queue using an `int[]` instead of this for memory efficiency
-    private Deque<Integer> q;
+    private final Deque<Integer> q;
 
     public EdmondsMaximumMatching(Graph graph) {
         super(graph);
 
         n = graph.numVertices();
-        m = (int) graph.numEdges();
+        // number of edges
+        int m = (int) graph.numEdges();
         adj = new int[n + 1][n + 1];
         edge = new int[(int) (n + 1 + 2 * m)];
         label = new int[n + 1];
@@ -166,7 +166,6 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         int x; // current vertex of search
         int y;
         int v; // temporary variable
-        boolean found;
 
         // initialize data structures
         for (int i = 0; i <= n; i++) {
