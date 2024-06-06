@@ -36,7 +36,6 @@ import java.util.Arrays;
 public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements MatchingAlgorithm {
     // we store n for faster memory access (faster than a method call)
     private final int n; // number of vertices
-    private final int minV; // minimum index of a vertex in the original graph
     // label[i] can be 4 things:
     // - -1                           - non-outer
     // - 0                            - start label
@@ -76,9 +75,6 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         for (int i = 0; i <= n; i++) {
             parent[i] = i;
         }
-
-        // find the min vertex label in order to normalize all labels in interval [1, n]
-        minV = Arrays.stream(graph.vertices()).min().orElse(0) - 1;
     }
 
     // finds first[x]
@@ -236,8 +232,8 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
                 x = q[qFirst++];
 
                 // walk through its edge list
-                for (int y : graph.neighbors(x + minV)) {
-                    y -= minV;
+                for (int y : graph.neighbors(graph.vertexAt(x - 1))) {
+                    y = graph.indexOf(y) + 1;
 
                     // if we find an edge that is unmatched, it means we can augment the path and stop the current search
                     if (mate[y] == 0 && y != u) {
@@ -286,7 +282,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         // matching is found, build it from mate array
         Matching m = new Matching(graph);
         for (int i = 1; i <= n; i++) {
-            m.add(i + minV, mate[i] + minV); // take into account minV to denormalize the vertex indices
+            m.add(graph.vertexAt(i - 1), graph.vertexAt(mate[i] - 1)); // take into account minV to denormalize the vertex indices
         }
 
         return m;
