@@ -42,10 +42,12 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
 //    // - [1, n]                       - vertex label
 //    // - y << 32 + x, for an edge xy  - edge label
     private final long[] label;
-    // first[i] is the first non-outer vertex on the path from i to the start vertex s
-    private final int[] first;
     // ij in matching <=> mate[i] = j and mate[j] = i
     private final int[] mate;
+
+    // union-find data structure used for faster traversal of first array
+    // the meaning of first[i] is maintained
+    private final int[] parent;
 
     // queue used for the search, we use our own implementation because this queue also stores the outer nodes in the
     // current search, which we use in the label method and when resetting the search
@@ -57,14 +59,42 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
 
         n = graph.numVertices();
         label = new long[n + 1];
-        first = new int[n + 1];
         mate = new int[n + 1];
         q = new int[n];
         qFirst = qLast = 0;
 
+        parent = new int[n + 1];
+        for (int i = 0; i <= n; i++) {
+            parent[i] = i;
+        }
+
         // find the min vertex label in order to normalize all labels in interval [1, n]
         minV = Arrays.stream(graph.vertices()).min().orElse(0) - 1;
+    }
 
+    // finds first[x]
+    private int find(int x) {
+        if (parent[x] == x) {
+            return x;
+        }
+
+        parent[x] = find(parent[x]);
+        return parent[x];
+    }
+
+    // merges sets of which x and y are parts
+    // y is always a non-outer node which should become a root in the union find data structure
+    // x is an outer node which gets added to the subtree of y
+    private void union(int x, int y) {
+        parent[y] = y;
+
+        // if they have the same parent, nothing must be done
+        if (x == y) {
+            return;
+        }
+
+        // pick the root of the new tree as the node with the highest rank
+        parent[x] = y;
     }
 
     // recursively augment the path P(x)
@@ -93,8 +123,8 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
     // label non-outer vertices in paths P(x) and P(y)
     private void label(int x, int y) {
         long edgeLabel = (long) x + ((long) y << 32);
-        int r = first[x];
-        int s = first[y];
+        int r = find(x);
+        int s = find(y);
         int join = 0; // this will be the index of the first non-outer vertex both on P(x) and P(y) (variable will also be used as an aux for swap)
 
         // if they have the same non-outer vertex as the first on their paths to the start, there are no new vertices
@@ -113,7 +143,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
             r = s;
             s = join;
 
-            r = first[(int)label[mate[r]]];
+            r = find((int) label[mate[r]]);
 
             if (label[r] == -edgeLabel) {
                 join = r;
@@ -125,28 +155,20 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
 
         // mark all non-outer vertices on P(x) and P(y) (excluding join) with an edge label
         // use r as the iterator
-        r = first[x];
+        r = find(x);
         while (r != join) {
             label[r] = edgeLabel;
-            first[r] = join;
+            union(r, join);
             q[qLast++] = r;
-            r = first[(int)label[mate[r]]];
+            r = find((int) label[mate[r]]);
         }
 
-        r = first[y];
+        r = find(y);
         while (r != join) {
             label[r] = edgeLabel;
-            first[r] = join;
+            union(r, join);
             q[qLast++] = r;
-            r = first[(int)label[mate[r]]];
-        }
-
-        // update all outer vertices i that have their first[i] marked by the method to have their first[i] = join
-        for (int i = 0, qi; i < qLast; i++) {
-            qi = q[i];
-            if (label[qi] >= 0 && label[first[qi]] >= 0) {
-                first[qi] = join;
-            }
+            r = find((int) label[mate[r]]);
         }
     }
 
@@ -171,7 +193,8 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
             }
 
             // start the search from unmatched vertex u
-            label[u] = first[u] = 0;
+            label[u] = 0;
+            union(u, 0);
             q[qLast++] = u;
 
             // at this stage, we begin the search in a BFS manner, storing a queue of outer edges (label[i] >= 0)
@@ -202,7 +225,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
                     // if mate of y is non-outer, it means we can extend the path P(x) with edge (y, mate[y])
                     if (label[v] < 0) {
                         label[v] = x;
-                        first[v] = y;
+                        union(v, y);
                         q[qLast++] = v;
                     }
                 }
@@ -213,7 +236,8 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
             for (int i = 0, qi; i < qLast; i++) {
                 qi = q[i];
                 label[qi] = label[mate[qi]] = -1;
-                first[qi] = first[mate[qi]] = 0;
+                union(qi, qi);
+                union(mate[qi], mate[qi]);
             }
             qFirst = qLast = 0;
 
