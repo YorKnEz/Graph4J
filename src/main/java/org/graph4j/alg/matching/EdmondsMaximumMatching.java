@@ -258,7 +258,7 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
                         q[qLast++] = v;
                     }
 
-                    // else the edge doesn't contribute with anything to the current search so it can be skipped
+                    // else the edge doesn't contribute with anything to the current search, so it can be skipped
                 }
             }
 
