@@ -36,15 +36,11 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
     // we store n and m for faster memory access (faster than a method call)
     private final int n; // number of vertices
     private final int minV; // minimum index of a vertex in the original graph
-    // we use an adjacency matrix instead of an adjacency list for O(1) retrieval of an edge number, given two vertices i, j
-    // adj[i][j] = edge number of edge (i,j) or 0 if the edge doesn't exist
-//    private final int[][] adj;
-//    private final int[] end; // given the number of an edge (i, j), n(ij), end[2 * n(ij) - 1] = i and end[2 * n(ij)] = j
 //    // label[i] can be 4 things:
-//    // - -1                 - non-outer
-//    // - 0                  - start label
-//    // - [1, n]             - vertex label
-//    // - [n + 1, n + 2 * m] - edge label
+//    // - -1                           - non-outer
+//    // - 0                            - start label
+//    // - [1, n]                       - vertex label
+//    // - y << 32 + x, for an edge xy  - edge label
     private final long[] label;
     // first[i] is the first non-outer vertex on the path from i to the start vertex s
     private final int[] first;
@@ -60,10 +56,6 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         super(graph);
 
         n = graph.numVertices();
-        // number of edges
-//        int m = (int) graph.numEdges();
-//        adj = new int[n + 1][n + 1];
-//        end = new int[2 * m + 1];
         label = new long[n + 1];
         first = new int[n + 1];
         mate = new int[n + 1];
@@ -73,13 +65,6 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         // find the min vertex label in order to normalize all labels in interval [1, n]
         minV = Arrays.stream(graph.vertices()).min().orElse(0) - 1;
 
-//        int i = 1;
-//        for (var e : graph.edges()) {
-//            end[2 * i - 1] = e.source() - minV;
-//            end[2 * i] = e.target() - minV;
-//            adj[e.source() - minV][e.target() - minV] = adj[e.target() - minV][e.source() - minV] = n + 2 * i;
-//            i++;
-//        }
     }
 
     // recursively augment the path P(x)
@@ -100,7 +85,6 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         }
 
         // else x must have an edge label, so we retrieve the vertices forming the said edge and
-//        int v = end[label[x] - 1 - n], w = end[label[x] - n];
         int v = (int) (label[x] & 0xFFFFFFFFL), w = (int) (label[x] >> 32);
         augment(v, w);
         augment(w, v);
