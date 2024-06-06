@@ -282,7 +282,9 @@ public class EdmondsMaximumMatching extends SimpleGraphAlgorithm implements Matc
         // matching is found, build it from mate array
         Matching m = new Matching(graph);
         for (int i = 1; i <= n; i++) {
-            m.add(graph.vertexAt(i - 1), graph.vertexAt(mate[i] - 1));
+            if (mate[i] != 0) {
+                m.add(graph.vertexAt(i - 1), graph.vertexAt(mate[i] - 1));
+            }
         }
 
         return m;
